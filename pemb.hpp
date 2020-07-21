@@ -71,16 +71,24 @@ protected:
         size_type		  m_levels = 1;
         bit_vector_type *m_A;
         bit_vector_type *B;
+        bit_vector_type *BF;
+        bit_vector_type *B_F;
         bit_vector_type *m_B;
         rank_1_type       *m_A_rank;
         rank_1_type       *m_B_rank;
         rank_1_type       *B_rank;
+        rank_1_type       *BF_rank;
+        rank_1_type       *B_F_rank;
         select_1_type     *m_A_select1;
         select_1_type     *m_B_select1;
         select_1_type     *B_select1;
+        select_1_type     *B_F_select1;
+        select_1_type     *BF_select1;
+        select_0_type     *BF_select0;
         select_0_type     *m_A_select0;
         select_0_type     *m_B_select0;
         bit_vector_type    *m_B_star;
+        succ_tree          *BF_st;
         succ_tree          *m_B_st;
         succ_tree          *m_B_star_st;
         auxiliar			t;
@@ -91,21 +99,37 @@ protected:
             m_levels = p.m_levels;
             m_A       = p.m_A;
             B       = p.B;
+            BF       = p.BF;
             B_rank  = p.B_rank;
+            BF_rank  = p.BF_rank;
             B_select1     = p.B_select1;
+            B_F       = p.B_F;
+            B_F_rank  = p.B_F_rank;
+            B_F_select1     = p.B_F_select1;
+            BF_select1     = p.BF_select1;
+            BF_select0     = p.BF_select0;
             m_B_rank  = p.m_B_rank;
             m_B_select1     = p.m_B_select1;
             m_A_rank  = p.m_A_rank;
             m_A_select1     = p.m_A_select1;
             m_A_select0     = p.m_A_select0;
 	    m_A_rank.set_vector(&m_A);
+	    B_rank.set_vector(&B);
+	    BF_rank.set_vector(&B);
+	    B_F_rank.set_vector(&B);
+	    B_select1.set_vector(&B);
+	    BF_select1.set_vector(&BF);
+	    BF_select0.set_vector(&BF);
+	    B_F_select1.set_vector(&B_F);
 	    m_A_select1.set_vector(&m_A);
 	    m_A_select0.set_vector(&m_A);
 		m_B_select0.set_vector(&m_B);
 	    m_B = p.m_B;
 	    m_B_star = p.m_B_star;
+	    BF_st = p.BF_st;
 	    m_B_st = p.m_B_st;
 	    m_B_star_st = p.m_B_star_st;
+	    BF_st.set_vector(BF);
 	    m_B_st.set_vector(m_B);
 	    m_B_star_st.set_vector(m_B_star);
         }
@@ -117,33 +141,42 @@ protected:
         pemb() {};
 
      	pemb(Graph g,unsigned int inicial, unsigned int *jerarquias, unsigned int *limites, unsigned int niveles,unsigned int total, unsigned int tam) {
+	  
+	  //inicializo todo
+
 	  m_vertices = g.vertices();
 	  m_edges = g.edges();
 	  m_levels = niveles;
      m_A = new bit_vector_type[niveles]();
      B = new bit_vector_type[niveles]();
+     BF = new bit_vector_type[niveles]();
+      B_F = new bit_vector_type[niveles]();
 m_B = new bit_vector_type[niveles]();
 m_B_star = new bit_vector_type[niveles]();
 m_A_rank = new rank_1_type[niveles]();
 m_A_select1 = new select_1_type[niveles]();
 B_rank = new rank_1_type[niveles]();
+BF_rank = new rank_1_type[niveles]();
 B_select1 = new select_1_type[niveles]();
+B_F_rank = new rank_1_type[niveles]();
+B_F_select1 = new select_1_type[niveles]();
+BF_select1 = new select_1_type[niveles]();
+BF_select0 = new select_0_type[niveles]();
 m_B_rank = new rank_1_type[niveles]();
 m_B_select1 = new select_1_type[niveles]();
 m_A_rank = new rank_1_type[niveles]();
 m_A_select1 = new select_1_type[niveles]();
 m_A_select0 = new select_0_type[niveles]();
 m_B_select0 = new select_0_type[niveles]();
+BF_st = new succ_tree[niveles]();
 m_B_st = new succ_tree[niveles]();
 m_B_star_st = new succ_tree[niveles]();
-   //  bit_vector_type *m_A_aux = new bit_vector_type[niveles]();
+
 	  t = g.dfs_spanning_tree_propio(inicial,jerarquias,limites,niveles,total);
-	 //  puts("inicialice t");
 	  vector <int> corch,parente;
 	  vector <vector <char> >ParenteAux =t.getParentesis();
 	  for(int i = 0; i < niveles; i++){
 	  	int aux1 = 0, aux2= 0;
-	  //	printf("ENTRE AL NIVEL %d\n",i);
 	  	for(int j = 0; j < ParenteAux[i].size();j++){
 	  		if(ParenteAux[i][j] == '(' || ParenteAux[i][j] == ')')aux1++;
 	  		else aux2++;
@@ -159,11 +192,12 @@ m_B_star_st = new succ_tree[niveles]();
 	  unsigned int idx = 0;
 	  unsigned int ii = 0;
 	  unsigned int pos = 0;
-	 // puts("llegue al parentesis");
 	  	  	  bool *bits_aux = t.getBits();	
+	  	  	  int *cierres_aux = t.getcierres();	
 
+
+	//construyo bitvectors a partir de sencuencia de parentesis y corchetes
 	  for(int i = 0; i < niveles; i++){
-	  //puts("inicio for");
 	  bit_vector_type A_local(t.getParentesis()[i].size(),0);
 	  bit_vector_type B_local(parente[i],0);
 	  bit_vector_type B_star_local(corch[i],0);
@@ -179,85 +213,71 @@ m_B_star_st = new succ_tree[niveles]();
 	  		if(ParenteAux[i][j] == ')' ){
 	  			aux1++;	  			
 	  		}
-	  		if(ParenteAux[i][j] == '[' ){
-	  				  				  				//  				printf("%d ",j);	  		
+	  		if(ParenteAux[i][j] == '[' ){  		
 	  			B_star_local[aux2] = 1;
 	  			aux2++;	  			
 	  		}
 	  		if(ParenteAux[i][j] == ']' ){
-	  				  				  				 // 			printf("%d ",j);
 	  			aux2++;	  			
 	  		}
 	  	}
-	  //	puts("");
-	  //	puts("termine for");
 	  	m_A[i].swap(A_local);
 	    m_B[i].swap(B_local);
 	    m_B_star[i].swap(B_star_local);
 	  }
 	  for(int i = 0; i <  niveles; i++){
 	  	bit_vector_type B_l(tam,0);
+	  	bit_vector_type B_lF(tam,0);
 	  	for(int j = 0; j < tam; j++){
 	  		if(bits_aux[j + i*tam] == true){
 	  			B_l[j] = 1;
 	  		}
+if(cierres_aux[j + i*m_vertices] != -1)B_lF[cierres_aux[j + i*m_vertices] - i*m_vertices] = 1;
 	  	}
 	  	B[i].swap(B_l);
+	  	B_F[i].swap(B_lF);
 	  }
-//	  m_A->swap(m_A_aux);
-/*
-	  	  for(int i = 0; i < 1; i++){
-	  	for(int j = 0 ; j <40;j++)cout <<B[i][j] << "";
-	  	cout << endl; 
-	  }
-	  */
-	 /* 
-	  puts("imprimo m_A");
-	  for(int i = 0; i < niveles; i++){
-	  	for(int j = 0 ; j < m_A[i].size();j++)cout <<m_A[i][j] << "";
-	  	cout << endl; 
-	  }
-	  	  puts("imprimo B");
-	  for(int i = 0; i < niveles; i++){
-	  	for(int j = 0 ; j < B[i].size();j++)cout <<B[i][j] << "";
-	  	cout << endl; 
-	  }
-	  	  	  puts("imprimo m_B");
-	  	  for(int i = 0; i < niveles; i++){
-	  	for(int j = 0 ; j < m_B[i].size();j++)cout <<m_B[i][j] << "";
-	  	cout << endl; 
-	  }
-	  	  	  	  puts("imprimo m_B_star");
-	  	  for(int i = 0; i < niveles; i++){
-	  	for(int j = 0 ; j < m_B_star[i].size();j++)cout <<m_B_star[i][j] << "";
-	  	cout << endl; 
-	  }
-	  */
+for(int i = 0; i < niveles; i++){
+	int contpos = 0;
+	bit_vector_type BF_l(parente[i],0);
+	for(int j = 0; j < tam; j++){
+		if(B[i][j]==1){	
+			BF_l[contpos] = 1;
+			contpos++;
+		}
+		if(B_F[i][j]==1){
+			contpos++;
+		}
+	}
+	BF[i].swap(BF_l);
+}
+//instancio los rank,select y sst
 for(int i = 0; i < niveles; i++){
 	  util::init_support(m_A_rank[i], &m_A[i]);
 	  util::init_support(m_B_rank[i], &m_B[i]);
+	  //  puts("ENTRE");
  	  util::init_support(B_rank[i], &B[i]);
+ 	  util::init_support(BF_rank[i], &BF[i]);
+ 	  util::init_support(B_F_rank[i], &B_F[i]);
+ 	   // puts("ENTRE");
  	  util::init_support(m_A_select1[i], &m_A[i]);
   	  util::init_support(m_B_select1[i], &m_B[i]);
  	  util::init_support(B_select1[i], &B[i]); 
+ 	  util::init_support(B_F_select1[i], &B_F[i]); 
+ 	  util::init_support(BF_select1[i], &BF[i]); 
+ 	  util::init_support(BF_select0[i], &BF[i]); 
 	  util::init_support(m_A_select0[i], &m_A[i]);
 	  util::init_support(m_B_select0[i], &m_B[i]);
+	  succ_tree B_F_local_st(&BF[i]);
 	  succ_tree B_local_st(&m_B[i]);
 	  succ_tree B_star_local_st(&m_B_star[i]);
+	  BF_st[i].swap(B_F_local_st);
+	  BF_st[i].set_vector(&BF[i]);
 	  m_B_st[i].swap(B_local_st);
 	  m_B_st[i].set_vector(&m_B[i]);
 	  m_B_star_st[i].swap(B_star_local_st);
 	  m_B_star_st[i].set_vector(&m_B_star[i]);
 }
-
-//	  succ_tree B_local_st(&m_B);
-//	  succ_tree B_star_local_st(&m_B_star);
-//[0]
-//	  m_B_st.swap(B_local_st);
-//	  m_B_st.set_vector(&m_B);
-//	  m_B_star_st.swap(B_star_local_st);
-//	  m_B_star_st.set_vector(&m_B_star);
-	//  puts("TERMINEEEE");
         }
 
         //! Copy constructor
@@ -287,14 +307,30 @@ for(int i = 0; i < niveles; i++){
 		
 		m_A             = std::move(g.m_A);
 		B       = std::move(g.B);
+		BF       = std::move(g.BF);
+		B_F       = std::move(g.B_F);
 		B_rank       = std::move(g.B_rank);
+		BF_rank       = std::move(g.BF_rank);
 		B_select1       = std::move(g.B_select1);
+		B_F_rank       = std::move(g.B_F_rank);
+		B_F_select1       = std::move(g.B_F_select1);
+		BF_select1       = std::move(g.BF_select1);
+		BF_select0       = std::move(g.BF_select0);
 		m_A_rank        = std::move(g.m_A_rank);
 		m_A_select1     = std::move(g.m_A_select1);
 		m_B_rank        = std::move(g.m_B_rank);
 		m_B_select1     = std::move(g.m_B_select1);
 		m_A_select0     = std::move(g.m_A_select0);
 		m_B_select0     = std::move(g.m_B_select0);
+
+
+		B_rank.set_vector(&B);
+		B_select1.set_vector(&B);
+		B_F_rank.set_vector(&BF);
+		B_F_select1.set_vector(&BF);
+		BF_rank.set_vector(&BF);
+		BF_select1.set_vector(&BF);
+		BF_select0.set_vector(&BF);
 		m_A_rank.set_vector(&m_A);
 		m_A_select1.set_vector(&m_A);
 		m_B_rank.set_vector(&m_B);
@@ -304,6 +340,9 @@ for(int i = 0; i < niveles; i++){
 
 		m_B             = std::move(g.m_B);
 		m_B_star        = std::move(g.m_B_star);
+
+		BF_st          = std::move(g.BF_st);
+		BF_st.set_vector(&BF);
 
 		m_B_st          = std::move(g.m_B_st);
 		m_B_st.set_vector(&m_B);
@@ -328,7 +367,16 @@ for(int i = 0; i < niveles; i++){
 		B.swap(g.B);
                 util::swap_support(B_rank, g.B_rank, &B, &(g.B));
                 util::swap_support(B_select1, g.B_select1, &B, &(g.B));
+              
+        BF.swap(g.BF);
+        		util::swap_support(BF_rank, g.BF_rank, &BF, &(g.BF));
+        		util::swap_support(BF_select1, g.BF_select1, &BF, &(g.BF));
+        		util::swap_support(BF_select0, g.BF_select0, &BF, &(g.BF));
+        		util::swap_support(BF_st, g.BF_st, &BF, &(g.BF));
 
+		B_F.swap(g.B_F);
+                util::swap_support(B_F_rank, g.B_F_rank, &B_F, &(g.B_F));
+                util::swap_support(B_F_select1, g.B_F_select1, &B_F, &(g.B_F));
 
 		m_B.swap(g.m_B);
 		        util::swap_support(m_B_rank, g.m_B_rank, &m_B, &(g.m_B));
@@ -383,6 +431,17 @@ for(int i = 0; i < niveles; i++){
 	  written_bytes += B_rank[i].serialize(out, child, "B_rank");
 	  written_bytes += B_select1[i].serialize(out, child, "B_select1");
 
+
+	  written_bytes += B_F[i].serialize(out, child, "B_F");
+	  written_bytes += B_F_rank[i].serialize(out, child, "B_F_rank");
+	  written_bytes += B_F_select1[i].serialize(out, child, "B_F_select1");
+
+	  written_bytes += BF[i].serialize(out, child, "BF");
+	   written_bytes += BF_rank[i].serialize(out, child, "BF_rank");
+	  written_bytes += BF_st[i].serialize(out, child, "BF_succ_tree");
+	written_bytes += BF_select1[i].serialize(out, child, "BF_select1");
+	written_bytes += BF_select0[i].serialize(out, child, "BF_select0");
+
 	  written_bytes += m_B[i].serialize(out, child, "mB");
 	  written_bytes += m_B_rank[i].serialize(out, child, "mB_rank");
 	  written_bytes += m_B_select1[i].serialize(out, child, "mB_select1");
@@ -410,8 +469,17 @@ for(int i = 0; i < niveles; i++){
 	    m_A_select1.load(in, &m_A);
 	    m_A_select0.load(in, &m_A);
 	    B.load(in);
-	    B_rank.load(in, &m_A);
-	    B_select1.load(in, &m_A);
+	    BF.load(in);
+	    B_rank.load(in, &B);
+	    BF_rank.load(in, &BF);
+	    BF_st.load(in, &BF);
+	    BF_select1.load(in, &BF);
+	    BF_select0.load(in, &BF);
+	    B_select1.load(in, &B);
+
+	   	B_F.load(in);
+	    B_F_rank.load(in, &B_F);
+	    B_F_select1.load(in, &B_F);
 
 
             m_B.load(in);
@@ -427,7 +495,6 @@ for(int i = 0; i < niveles; i++){
        size_type first(size_type v, int nivel) {
 	 if(v >= 0) {
 	   size_type pos = m_B_select1[nivel](v+1);
-	   //printf("%lu ",pos);
 	   size_type edge = 1;
 	    edge = m_A_select1[nivel](pos+1);
 	     return edge;
@@ -437,40 +504,37 @@ for(int i = 0; i < niveles; i++){
 
       /* Assuming indices start with 0 */
        //dado una posicion con parentesis que abre me da la posicion donde cierra, es circular
-      size_type mate(size_type i,int nivel) {
-	if(m_A[nivel][i] == 1) {
-	  size_type pos_in_B = m_A_rank[nivel](i); // rank1
 
-	  // Simulating the match operation
+      size_type mate(size_type i,int nivel) {
+	  size_type pos_in_B = m_A_rank[nivel](i); 
+	  if(m_A[nivel][i] == 1)pos_in_B++;
+	if(m_A[nivel][i] == 1) {
 	  size_type match_in_B;
-	 // cout << "pos in b = "<< pos_in_B << endl;
-	  if(m_B[nivel][pos_in_B] == 1)
-	    match_in_B = m_B_st[nivel].find_close(pos_in_B);
+	  if(m_B[nivel][pos_in_B-1] == 1)
+	    match_in_B = m_B_st[nivel].find_close(pos_in_B-1);
 	  else {
-	  	//	puts("buscare b");
-	  		    match_in_B = m_B_st[nivel].find_open(pos_in_B);
-	  	//	    	 cout << "b = "<<match_in_B << endl;
+	  		    match_in_B = m_B_st[nivel].find_open(pos_in_B-1);
 	  }
 	  return m_A_select1[nivel](match_in_B+1);
 	}
 	else
 	  {
+	    size_type pos_in_B_star = i - pos_in_B+1; 
 
-	    size_type pos_in_B_star = i - m_A_rank[nivel](i); // rank0
-	  //  cout  << " i = " << i << " pos_in_B_star " << pos_in_B_star << endl;
-	    // Simulating the match operation
 	    size_type match_in_B_star;
-	    if(m_B_star[nivel][pos_in_B_star] == 1){
-	    match_in_B_star = m_B_star_st[nivel].find_close(pos_in_B_star);
+	    if(m_B_star[nivel][pos_in_B_star-1] == 1){
+	    match_in_B_star = m_B_star_st[nivel].find_close(pos_in_B_star-1);
 	    return m_A_select0[nivel](match_in_B_star+1);
 	    }
 	    else{
-	    match_in_B_star = m_B_star_st[nivel].find_open(pos_in_B_star);
+	    match_in_B_star = m_B_star_st[nivel].find_open(pos_in_B_star-1);
 	    return m_A_select0[nivel](match_in_B_star+1);	
 	    }
 	  }  
 	return -1;
       }
+
+
 
       /* Assuming indices start with 0 */
       size_type next(size_type i) {
@@ -491,7 +555,7 @@ for(int i = 0; i < niveles; i++){
 	    return mate(i)+1;
 	  }
 	}
-	return -1; //ACA SE MUERE SI ENCADENO LAS FUNCIONES, EN TEORIA NO LAS DEBERIA ENCADENAR(?)
+	return -1; //NUNCA DEBERIA RETORNAR ESTO, LA ESTRUCTURA ASEGURA QUE NO LLEGE A ESTE RETORNO
       }
   
       size_type degree(size_type v) {
@@ -507,214 +571,103 @@ for(int i = 0; i < niveles; i++){
 	}
 	return dg;
       }
+
+
+//Dado un parentesis me retorna la region correspondiente.
+
 size_type vertex2(size_type e, int nivel){
-      	size_type pos_in_A = m_A_rank[nivel](e);
-      	//cout <<" pos in a " << pos_in_A << endl;
+      size_type pos_in_A = m_A_rank[nivel](e);
+	  if(m_A[nivel][e] == 1)pos_in_A++;      	
 
-      	if(m_B[nivel][pos_in_A] == 1 && m_A[nivel][e] == 1)return m_B_st[nivel].rank(pos_in_A)-1;
-
-      	else if(m_B[nivel][pos_in_A] == 0 && m_A[nivel][e] == 1){
-      		size_type match_pos = m_B_st[nivel].find_open(pos_in_A);
-      		return m_B_st[nivel].rank(match_pos)-1;
-  //    		return -1;
+      	if(m_B[nivel][pos_in_A-1] == 1 && m_A[nivel][e] == 1){
+      		return m_B_st[nivel].rank(pos_in_A-1)-1;
       	}
+      	else if(m_B[nivel][pos_in_A-1] == 0 && m_A[nivel][e] == 1){
+      		size_type match_pos = m_B_st[nivel].find_open(pos_in_A-1);
+      		return m_B_st[nivel].rank(match_pos)-1;
+      	}
+      	size_type pos_in_B = e- pos_in_A+1;
 
-      	size_type pos_in_B = e- pos_in_A;
-      	
-
-      	//cout << "pos in b "<< pos_in_B<<endl; 
-      	 if(m_A[nivel][e] == 0 && m_B_star[nivel][pos_in_B] == 1) {
-      	 //	return -1;
-      	 //	cout << "ENTRE AL IF DE VERTEX"<<endl;
+      	 if(m_A[nivel][e] == 0 && m_B_star[nivel][pos_in_B-1] == 1) {
      		size_type match_pos = mate(e,nivel);
-     	//	cout << "match_pos "<< match_pos<<endl;
      		size_type pos = m_A_rank[nivel](match_pos);
-
      		size_type pos2 = m_A_select1[nivel](pos+1); 
-     	//	cout << "pos2 "<< pos2<<endl;
      		if(m_B[nivel][m_A_rank[nivel](pos2)] == 1){
-     		//	puts("entre al if");
-     			pos2 = m_B_st[nivel].parent_t(m_A_rank[nivel](pos2));
-     	//		cout << "PADRE "<<  pos2 << endl;
-     			//cout << "POS IN A" << m_A_select1[0](pos2+1) ;
 
-     			return m_B_rank[nivel](m_A_rank[nivel](m_A_select1[nivel](pos2+1)));
+     			pos2 = m_B_st[nivel].parent_t(m_A_rank[nivel](pos2));
+     			size_type pos4 = m_A_select1[nivel](pos2+1);
+				size_type pos3 =m_A_rank[nivel](pos4);
+				if(m_A[nivel][pos4] == 1)pos3++;
+     			return m_B_rank[nivel](pos3-1);
      		}
      		else {
      			pos2 = mate(pos2,nivel);
-
-     			return m_B_rank[nivel](m_A_rank[nivel](pos2));
+     			size_type pos3 =m_A_rank[nivel](pos2);
+     			if(m_A[nivel][pos2] == 1)pos3++;
+     			return m_B_rank[nivel](pos3-1);
      		}
-/*
-     		size_type pos2 = m_B_select0[0](  (pos-m_B_rank[0](pos))+1); 
-     		cout << "pos "<< pos<<" rank " << m_B_rank[0](pos)  <<" pos2 " <<pos2 <<endl;
-     		pos_in_A = m_A_select1[0](pos2+1);
-     		cout << "POS FINAL "<< pos_in_A << " MATE "<< mate(pos_in_A) << endl;
-     		pos_in_A = m_A_rank[0](mate(pos_in_A));
-*/
-  //    		return m_B_st[0].rank(pos_in_A)-1;
-//return m_B_st[0].rank(pos)-1;
       		
       	}
-  	//cout << "POSICION = "<< pos_in_B << " VALOR " << m_B_star[0][pos_in_B]<<endl;
-	else if(m_A[nivel][e] == 0 && m_B_star[nivel][pos_in_B] == 0){
-	//	else {
+	else if(m_A[nivel][e] == 0 && m_B_star[nivel][pos_in_B-1] == 0){
+
      		size_type match_pos = mate(e,nivel);
      		size_type pos = m_A_rank[nivel](match_pos);
+			if(m_A[nivel][match_pos] == 1)pos++;
 
-     	//	cout << "match_pos "<< match_pos<<endl;
      		size_type pos2 = m_A_select1[nivel](pos+1); 
-     	//	cout << "pos2 "<< pos2<<endl;
+
      		if(m_B[nivel][m_A_rank[nivel](pos2)] == 1){
+
      			pos2 = m_B_st[nivel].parent_t(m_A_rank[nivel](pos2));
-     			 	//		cout << "el retorno " << m_B_rank[nivel](m_A_rank[nivel](m_A_select1[nivel](pos2+1))) << endl;
-     			return m_B_rank[nivel](m_A_rank[nivel](m_A_select1[nivel](pos2+1)));
+
+     			size_type pos4 = m_A_select1[nivel](pos2+1);
+				size_type pos3 =m_A_rank[nivel](pos4);
+				if(m_A[nivel][pos4] == 1)pos3++;
+     			return m_B_rank[nivel](pos3-1);
      		}
      		else {
+
      			pos2 = mate(pos2,nivel);
-     			return m_B_rank[nivel](m_A_rank[nivel](pos2));
+     			size_type pos3 =m_A_rank[nivel](pos2);
+     			if(m_A[nivel][pos2] == 1)pos3++;
+
+     			return m_B_rank[nivel](pos3-1);
      		}
-/*
-     		size_type pos2 = m_B_select0[0](  (pos-m_B_st[0].rank(pos))+1); 
-     		cout << "pos "<< pos<<" rank " << m_B_st[0].rank(pos)  <<" pos2 " <<pos2 <<endl;
-     		pos_in_A = m_A_select1[0](pos2+1);
-     		//cout << "POS FINAL "<< pos_in_A << " MATE "<< mate(pos_in_A) << endl;
-     		pos_in_A = m_A_rank[0](mate(pos_in_A));
-      		return m_B_st[0].rank(pos_in_A)-1;
-
-
-      	//	return m_B_st[0].rank(pos_in_A)-1;
-     		cout << "POS " << pos << "  " << endl;
-     	//	return m_B_st[0].rank(pos)-1;
-
-     	*/
       	}
       	return -1;
       }
-/*
-      size_type vertex(size_type e) {
-      	//	cout << "first = "<< first(e)<<endl;
-      	size_type pos_in_A = m_A_rank[0](e+1); // rank1
-      	//cout << " pos_in_A " << pos_in_A<<  " e " << e <<endl;
-      	if(m_A[0][e] == 1) {
-      	  if(m_B[0][pos_in_A] == 0) {
-      	    size_type match_pos;
-      	    if(m_B[0][pos_in_A] == 1)
-      	      match_pos = m_B_st[0].find_close(pos_in_A);
-      	    else 
-      	      match_pos = m_B_st[0].find_open(pos_in_A);
-	    //	cout << "match_pos = " << match_pos <<endl;
-      	    return m_B_st[0].rank(match_pos);
-      	  }
-      	  else {
-	    size_type par = m_B_st[0].parent_t(pos_in_A);
-      	    return m_B_st[0].rank(par);
-      	  }
-      	}
-      	else {
-      	//	puts("entre al else");
-      	  if(m_B[0][pos_in_A] == 1) {
-      	    return m_B_st[0].rank(pos_in_A);
-      	  }
-      	  else {
-      	    size_type match_pos;
-      	    if(m_B[0][pos_in_A] == 1)
-      	      match_pos = m_B_st[0].find_close(pos_in_A);
-      	    else 
-      	      match_pos = m_B_st[0].find_open(pos_in_A);
-	   //  	cout << "match_pos = " << match_pos <<endl;
-	    size_type par = m_B_st[0].parent_t(match_pos);
-	     //	cout << "par = " << par <<endl;
-      	    return m_B_st[0].rank(par);
-      	  }
-      	}
-      }
-*/
-      // Traversal of the neighbors of vertex v. If necessary, return all values
-      // of variable x to obtain the neighbors in a appropriate format
-      // me paro en la primera ocurrencia de v, trabajo en general con posiciones de la secuencia
-      /*
-      void list_neighbors(size_type v) {
-	if(v >= m_vertices)
-	  return;
-	size_type nxt = first(v);
-//	cout << "limite = " << nxt << endl;
-	while(nxt <= 2*m_edges+3) {
-	  if(nxt <= 2*m_edges+3) {
-	    size_type mt = mate(nxt);
-	  //  puts("ejecutare vertex");
-	    size_type x = vertex(mt); // Print neighbor
-	    cout <<"mate = " << mt<< " x = "<<x<<endl;
-	//    cout << x <<" ";
-	  }
-	  nxt = next(nxt);	
-//	    cout <<"next = " << nxt <<endl;	  
-	}
-	puts("");
-      }
-**/
+
       vector <int> lista_vecinos(size_type v, int nivel){
       	size_type nxt = first(v,nivel)+1, limite = mate(first(v,nivel),nivel);
-      //	cout << " limite = " << limite << endl;
+
       	vector <int> retorno;
       	while(nxt < limite){
-      	//	cout << "NEXT "<< nxt <<endl;
       		size_type x;
       		size_type pos_in_A = m_A_rank[nivel](nxt);
-      		if(m_A[nivel][nxt] == 1 && m_B[nivel][pos_in_A] == 1){
-      	//			cout << " NEXT = " << nxt << endl;
-      	//		puts("entre al if") ;
+      		if(m_A[nivel][nxt] == 1)pos_in_A++;
+      		if(m_A[nivel][nxt] == 1 && m_B[nivel][pos_in_A-1] == 1){
       			x = vertex2(nxt,nivel);
       			nxt = mate(nxt,nivel)+1;
       		}
       		else{
-      	//		puts("entre al else") ;
-      	//			cout << " NEXT = " << nxt << endl;
       			x = vertex2(nxt,nivel);
       			nxt ++;
       		}
-      	//	cout<<x << " ";
       		retorno.push_back(x);
       	}
+
       	if(v != 0){
       		nxt = m_B_st[nivel].parent_t(m_B_select1[nivel](v+1));
-      	//	cout << m_B_select1[nivel](v+1) << " " << nxt;
-      		size_type x = m_B_rank[nivel](m_A_rank[nivel](m_A_select1[nivel](nxt+1)));
-      		//cout << x;
-      		if(x < limite)retorno.push_back(x);
+      		int auxtemp = m_A_rank[nivel](m_A_select1[nivel](nxt+1));
+      		size_type x = m_B_rank[nivel](auxtemp);
+      		if(m_B[nivel][auxtemp] == 1)x++;
+      		if(x-1 < limite)retorno.push_back(x-1);
       	}
-      	//cout << endl;
       	return retorno;
       }
 
-      // Traversal of the face where the edge e belongs. If necessary, return
-      // all values of variable curr_vertex to obtain the vertices of the face
-      // in a appropriate format
-/*
-      void face(size_type e) {
-	if(e >= 2*m_edges)
-	  return;
-	char flag = 1;
-	size_type nxt = e;
-	size_type mt;
-	size_type init_vertex = vertex(nxt);
-	size_type curr_vertex = -1;
 
-	while(curr_vertex != init_vertex || flag) {
-	  if(nxt >= 2*m_edges) {
-	    nxt = first(vertex(mt));
-	  }
-	  
-	  flag = 0;
-	  mt = mate(nxt);
-	  curr_vertex = vertex(mt);
-	  nxt = next(mt);
-	}
-      }
-      */
-//Las funciones que yo implemente van aca
-
-
+      //Funciones auxiliar para hacer coincidir las regiones consultadas en el baseline
 	int getMapeo(size_type pos, unsigned int nivel){
 		int retorno = B_select1[nivel](pos+1);
 		return t.getposMapeo(m_vertices*nivel+retorno);
@@ -722,105 +675,74 @@ size_type vertex2(size_type e, int nivel){
 	int getReverso(size_type pos, unsigned int nivel){
 		return t.getposReverso(m_vertices*nivel+pos);
 	}
-
+//Retorna ID region correspondiente
     unsigned int regionID(unsigned int x, unsigned int level){
-	//printf("rank = %ld\n",m_B_rank[level](x));
 	return m_B_rank[level](x);
 	}
+	//Retorna primer parentesis en nivel 0 contenido por la region entregada
     unsigned int goUp(unsigned int x, unsigned int level){
-//	printf("select = %ld\n",B_select1[level](x+1));
-	//printf("rank = %ld\n",m_B_rank[level](x));
-//	printf("rank = %ld\n",m_B_rank[level](m_B_select1[0](B_select1[level](x+1)+1)));
-	//m_B_select1[0](B_select1[level](x));
 	return m_B_select1[0](B_select1[level](x+1)+1);
 	}
 
 
 
-/*
+
+	//Retorna region que contiene a la region entregada, region entregada siempre pertenece al nivel 0
     unsigned int goDown(unsigned int x, unsigned int level){
-    int posicion = m_B_select1[0](x+1);
-    int q = m_B_select1[0](x+1),p = -1,i=x;
-    int closeq = m_B_st[0].find_close(q);
-    bool entre = false;
-    int contador = 0;
-    int actual = m_B_rank[0](posicion);
-    int y;
-    contador = 0;
-    if(B[level][m_B_rank[0](posicion)] == 0)while(true){
-    	entre = true;
-    	y = B_select1[level](B_rank[level](actual));
-    	actual = y;
-    	posicion = m_B_select1[0](y+1);
-    	p = m_B_select1[0](y+1);
-    	if(B[level][y] == 1 && p < q && closeq < m_B_st[0].find_close(p) )break;
-    	contador++;
-    }
-    printf("contador = %d\n",contador);
-	unsigned int retorno;
-	if(!entre )retorno = (B_rank[level](x));
-	else retorno = B_rank[level](m_B_rank[0](posicion));
-	return m_B_select1[level](retorno+1);
+
+    	if(B[level][x] == 1){
+    		int retorno = (B_rank[level](x)+1);
+    		return m_B_select1[level](retorno);
+    	}
+    	if(B_F[level][x] == 1){
+    		int retornar = B_F_rank[level](x)+1; // cuantos parentesis que cierran tengo hasta pos x, sumo 1 porque rank toma hasta x-1
+    		retornar = BF_select0[level](retornar); // seleccionoen BF el parentesis que cierra
+    		retornar = BF_st[level].find_open(retornar); // obtengo el parentesis que abre
+    		retornar = BF_rank[level](retornar)+1; // obtengo cuantos parentesis que abren llevo
+    		return m_B_select1[level](retornar);
+    	}
+    	else {
+    		int cerrado =B_F_select1[level](B_F_rank[level](x)+1); //selecciono parentesis cerrado mas cercano por la derecha
+    		int abierto =B_select1[level](B_rank[level](x)+1);  //selecciono parentesis abierto mas cercano por la derecha
+    		if(abierto <= cerrado && B_rank[level](x) != B_rank[level](B[level].size()-1)){
+    			int retornar = B_rank[level](abierto)+1;
+    			retornar = BF_select1[level](retornar);
+    			retornar = BF_st[level].parent_t(retornar); 
+    			retornar = BF_rank[level](retornar)+1; // obtengo cuantos parentesis que abren llevo
+    			return m_B_select1[level](retornar); 
+    		}
+    		else {
+     		int retornar = B_F_rank[level](cerrado)+1; // cuantos parentesis que cierran tengo hasta pos cerrado, sumo 1 porque rank toma hasta x-1
+    		retornar = BF_select0[level](retornar); // seleccionoen BF el parentesis que cierra
+    		retornar = BF_st[level].find_open(retornar); // obtengo el parentesis que abre
+    		retornar = BF_rank[level](retornar)+1; // obtengo cuantos parentesis que abren llevo
+    		return m_B_select1[level](retornar);   			
+    		}
+
+
+    	}
 	}
-*/
-
-
-
-    unsigned int goDown(unsigned int x, unsigned int level){
-	//printf("Down = %ld\n",B_rank[level](B_rank[level](m_B_select1[0](x+1))+1));
-    int posicion = m_B_select1[0](x+1);
-    bool entre = false;
-    int auxiliar4;
-    while(B[level][m_B_rank[0](posicion)] == 0){
-    	entre = true;
-    	posicion = m_B_st[0].parent_t(posicion);
-
-    }
-    auxiliar4 = B_rank[level](m_B_rank[0](posicion));
-	unsigned int retorno;
-	if(!entre )retorno = (B_rank[level](x));
-	else retorno = B_rank[level](m_B_rank[0](posicion));
-	return m_B_select1[level](retorno+1);
-	}
-
-
-
-
-
 
 
     unsigned int goLevel(unsigned int x, unsigned int levels, unsigned int levelt){
     unsigned int regions = regionID(goUp(x,levels),0);
     unsigned int regiont = regionID(goDown(regions,levelt),levelt);
-   // printf("%u\n",regiont);
-	//printf("level = %u\n",regionID(goDown(regionID(goUp(x,levels),levels),levelt),levelt));
 	return regiont;
 	}
+
 	bool Inside(unsigned int x, unsigned int levelx, unsigned int y, unsigned int levely){
 		unsigned int comprobar = goLevel(x,levelx,levely);
-		//printf("%u ",comprobar);
-		//if(comprobar == y)printf("contenido\n");
-		//else printf("no contenido\n");
 		if(comprobar == y)return true;
 		else return false;
 	}
-	void comprobarvecinos(){
-		for(int i = 0; i < 2; i++){
-	//		cout << "VECINOS NODO " << i << endl;
-	//		lista_vecinos(i,2);
-		}
-	}	
 
 	bool Touches(unsigned int x, unsigned int levelx, unsigned int y, unsigned int levely){
-	//	puts("ENTRE");
+		if(x == y && levelx == levely)return true;
 		if(levely < levelx){
-	//		puts("ENTRE ACA");
 			bool comprobar = Inside(y,levely,x,levelx);
 			vector <int> vecinos = (lista_vecinos(y,levely));
-	//		puts("AUN VIVO");
 			for(int i = 0; i < vecinos.size();i++){
 				unsigned int contenedor = goLevel(vecinos[i],levely,levelx);
-			//	cout << "VECINO " << vecinos[i] << " CONTENEDOR " << contenedor <<endl;
 				if(contenedor == x  && !comprobar)return true;
 				if(contenedor != x  && comprobar)return true;
 	
@@ -836,15 +758,10 @@ size_type vertex2(size_type e, int nivel){
 
 		}
 		else {
-		//	puts("ENTRE AL ELSE");
 			bool comprobar = Inside(x,levelx,y,levely);
 			vector <int> vecinos = (lista_vecinos(x,levelx));
-		//	puts("AUN VIVO");
-		//	printf("tam = %d\n",vecinos.size());
 			for(int i = 0; i < vecinos.size();i++){
-		//		printf("vecino = %d\n",vecinos[i]);
 				unsigned int contenedor = goLevel(vecinos[i],levelx,levely);
-			//				cout << "VECINO " << vecinos[i] << " CONTENEDOR " << contenedor<<endl;
 				if(contenedor == y  && !comprobar)return true;
 				if(contenedor != y  && comprobar)return true;
 
@@ -853,45 +770,37 @@ size_type vertex2(size_type e, int nivel){
 		return false;
 	} 
 
+	vector <int> compvecinos(unsigned int x, int levelx){
+		vector <int> vecinos = (lista_vecinos(x,levelx));
+		return vecinos;
+
+	}
+
+
+
 	vector <int> Contained(unsigned int x, int levelx, int levely){
 		unsigned int a = goLevel(x,levelx,levely);
 		size_type nxt = first(a,levely);
 		size_type limit = mate(nxt,levely);
 		size_type limit2 = mate(first(0,levely),levely);
 		limit2 = m_B_rank[levely](m_A_rank[levely](limit2));
-		//cout << limit2 << endl;
 		vector <int> retorno;
 		retorno.push_back(vertex2(nxt,levely));
-		//cout << "PUSHEE " << vertex2(nxt,levely) << endl;
 		size_type pos_in_B = m_B_rank[levely](m_A_rank[levely](nxt))+2;
 		if(pos_in_B > limit2)return retorno;
-	//	cout << m_B_select1[levely](pos_in_B+2) << endl;
 		nxt = m_A_select1[levely](m_B_select1[levely](pos_in_B)+1);
-	//	nxt = m_A_select1[levely](	 m_B_select1[levely](m_B_rank[levely](m_A_rank[levely](nxt))+1) +1);
-	//	cout << m_A_rank[levely](nxt) << " " << m_B_select1[levely](m_A_rank[levely](nxt+1)+1) << endl;}
 		int contador = 0;
 		while(nxt < limit){
 			size_type pos_in_A = m_B_rank[levely](m_A_rank[levely](nxt));
 			size_type pos = B_select1[levely](pos_in_A+1);
-		//	cout  << nxt<< "  " <<  pos_in_A <<"   "  <<pos << endl;
 			if(B[levelx][pos] ==1){
-				//sputs("ENTRE");
-//
 				nxt = mate(nxt,levely);
-		//		cout << nxt <<endl;
 				size_type pos_in_B = m_B_rank[levely](m_A_rank[levely](nxt))+1;
-				//cout << pos_in_B << endl;
 				if(pos_in_B > limit2)break;
-		//		cout << m_A_rank[levely](nxt) << endl;
-		//		cout << pos_in_B << endl;
-		//		cout <<m_B_select1[levely](pos_in_B+1) << endl;
-		//		cout << m_A_select1[levely](m_B_select1[levely](pos_in_B+1)+1) << endl;
-		//		cout << m_B_select1[levely]( m_B_rank[levely](m_A_rank[levely](nxt+1))+1) <<  "  "<< m_A_rank[levely](nxt+1)<< endl;
 		nxt = m_A_select1[levely](m_B_select1[levely](pos_in_B)+1);
 			}
 			else if(B[levelx][pos] == 0){
 				retorno.push_back(vertex2(nxt,levely));
-			//	cout << "PUSHEE " << vertex2(nxt,levely) <<endl;
 				size_type pos_in_B = m_B_rank[levely](m_A_rank[levely](nxt))+2;
 				if(pos_in_B > limit2)break;
 				nxt = m_A_select1[levely](m_B_select1[levely](pos_in_B)+1);
@@ -899,50 +808,18 @@ size_type vertex2(size_type e, int nivel){
 			contador++;
 
 		}
-	//	sort(retorno.begin(),retorno.end());
 		return retorno;
 
 	}
-	
-	void comprobarfirst(){
-		for(int i = 0; i < 2; i++)cout <<" "<<getMapeo(i,2);
-		puts("");
-	}	
-	/*
-	void comprobarmate(){
-		for(int i = 0; i < 88; i++)if(m_A[0][i] == 0){
-			int aux = mate(i);
-			if(aux >= 0 )cout << " " << aux;
-		}
-			puts("");
-			//mate(i);
-	}	
-	void comprobarvertex1(){
-		for(int i = 1; i < 87; i++){
-			int aux = vertex2(i);
-			if(aux > -1)cout << " indice "<< i<<" aux " << aux << endl;
-		}
-			//puts("");
-	}
-	void comprobarnext(){
-		for(int i = 0; i < 21; i++)cout << " "<<vertex(next(first(i)))<<endl;
-			puts("");
-	}	
-	*/
- // Aca deberia terminar la seccion de funciones que yo implemente
   };
 
 
 
 
 
-//first corregido, falta comprobar para demas niveles, la logica si deberia funcionar
-//mate corregido igual para level 0
+
 
 
 }// end namespace sdsl
 #endif
 
-
-//FUNCION FIRST RECIBE UN ENTERO QUE CORRESPONDE AL ID DEL NODO AL CUAL SE LE QUIERE SABER SU POSICION EN EL ARREGLO M_A
-//

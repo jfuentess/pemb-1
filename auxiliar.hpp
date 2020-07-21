@@ -8,16 +8,18 @@ private:
   unsigned int levels,ni; // Cantidad de niveles de la jerarquia,ni = nodo inicial
   vector < vector<char> > parentesis;// Position of the last incident edge of a vertex in E
   bool *bits;
-  int *mapeo,*reverso;
+  int *mapeo,*reverso,*cierres;
+
 
 
 public:
-  auxiliar(unsigned int niveles,vector < vector<char> > parentesis, bool *bits, int *mapeo ,int *reverso){
+  auxiliar(unsigned int niveles,vector < vector<char> > parentesis, bool *bits, int *mapeo ,int *reverso,int *cierres){
     this->levels = niveles;
     this->parentesis = parentesis;
     this->bits = bits;
     this->mapeo = mapeo;
     this->reverso = reverso;
+    this->cierres = cierres;
   }
     auxiliar(){
   }
@@ -34,6 +36,9 @@ public:
 
   bool *getBits() {
     return this->bits;
+  }
+  int *getcierres() {
+    return this->cierres;
   }
   int *getMapeo(){
     return this->mapeo;

@@ -88,11 +88,28 @@ public:
 	 		}
 	 		if(aux == b && !comprobar)return true;
 	 		else if(aux != b && comprobar)return true;
-
 	 	}
 	 	return false;
 	 }
 	 
+
+	 vector<int> touches2(unsigned int a, unsigned int nivela, unsigned int b,unsigned int nivelb){
+	 	if(nivela > nivelb){
+	 		swap(nivelb,nivela);
+	 		swap(b,a);
+	 	}
+	 	bool comprobar = contenido(a,b);
+	 	int obj = nivelb - nivela;
+	 	vector <int> retorno;
+	 	for(int i = 0 ; i < getSizeV(a); i++){
+	 		int aux = getvecino(a,i);
+	 		retorno.push_back(aux);
+	 	}
+	 	return retorno;
+	 }
+
+
+
 
 };
 
