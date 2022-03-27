@@ -1563,7 +1563,7 @@ retorno = pos;
         }
 
 
-    vector <int> Contained(unsigned int x, int levelx, int levely){
+    vector <int> Contained2(unsigned int x, int levelx, int levely){
         unsigned int a = goLevel(x,levelx,levely);
         size_type nxt = first(a,levely);
         size_type limit = mate(nxt,levely);
@@ -1619,7 +1619,7 @@ retorno = pos;
     }
 
 
-        vector <int> Contained2(unsigned int x, int levelx, int levely){
+        vector <int> Contained(unsigned int x, int levelx, int levely){
                 unsigned int a = goLevel(x,levelx,levely);
                 size_type nxt = first(a,levely);
                 size_type limit = mate(nxt,levely);
