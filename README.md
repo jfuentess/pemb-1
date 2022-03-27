@@ -279,114 +279,156 @@ Personal copy of SDSL
 
 This branch of SDSL includes code for the following research projects:
 
-#### Succinct Run-length Encoded Rank/Select Data Structure
 
-This project provides a succinct data structure to support access, rank and
-select operations over a sequence with runs. 
+#### Fast and Compact Hierarchical Planar Embeddings
 
-A full description of the structure is available [here](https://arxiv.org/abs/1711.02910 "Run Compressed Rank/Select for Large Alphabets").
+This project provides three succinct data structures to represent Hierarchical planar embeddings. 
 
-The structure can be used as follows:
+The structures can be used as follows:
 
-```cpp
-#include <sdsl/rl_runs.hpp>
-
-using namespace sdsl;
-using namespace std;
-
-int main(int argc, char **argv) {
-
-    rl_runs<> rl_default; // Default configuration. Sampling size of 256 and
-	                      // wt_gmr underlying structure
-    rl_runs<64> rl_64; // Sampling size of 64 and wt_gmr underlying structure
-    rl_runs<64,wt_ap<>> rl_64_ap; // Sampling size of 64 and wt_ap underlying structure
-    rl_runs<64,wt_rlmn<>> rl_64_rlmn; // Sampling size of 64 and wt_rlmn underlying structure
-
-    construct(rl_default, argv[1], 1);
-    construct(rl_64, argv[1], 1);
-    construct(rl_64_ap, argv[1], 1);
-    construct(rl_64_rlmn, argv[1], 1);
-
-    cout << "Size rl_default: " << size_in_bytes(rl_default) << " bytes" << endl;
-    cout << "Size rl_64: " << size_in_bytes(rl_64) << " bytes" << endl;
-    cout << "Size rl_64_ap: " << size_in_bytes(rl_64_ap) << " bytes" << endl;
-    cout << "Size rl_64_rlmn: " << size_in_bytes(rl_64_rlmn) << " bytes" << endl;
-
-    int32_t a = rl_default[10];
-    cout << "rl_default[10]: " << a << endl;
-    cout << "rl_default.rank(10, " << a << "): " << rl_default.rank(10, a) << endl;
-    cout << "rl_default.select(10, " << a << "): " << rl_default.select(10, a) << endl;
-}
-```
-
-#### Fast and Compact Planar Embeddings
-
-This project provides a succinct data structure to represent planar embeddings. 
-
-A full description of the structure is available
-[here](https://arxiv.org/abs/1610.00130 "Fast and Compact Planar Embeddings").
-
-A corpus with planar embeddings is available
-[here](https://users.dcc.uchile.cl/~jfuentess/datasets/graphs.php "Experimental
-datasets: Planar graphs")
-
-The structure can be used as follows:
+Structure based on approach 1
 
 ```cpp
-#include <sdsl/pemb.hpp>
-#include <complementary/Graph.hpp>
+#include "graph3.hpp"
+#include "auxiliar.hpp"
+#include "pemb-ap1.hpp"
 #include <complementary/utils.hpp>
 
-using namespace sdsl;
-using namespace std;
 
-int main(int argc, char **argv) {
+
+using namespace std;
+using namespace sdsl;
+
+pemb<bit_vector, sd_vector<> > *pe;
+
+int main(int argc, char **argv){
   // argv[1] is the path to a file with the planar embedding.
-  // To check the input format, visit https://users.dcc.uchile.cl/~jfuentess/datasets/graphs.php
-  Graph g = read_graph_from_file(argv[1]);
-  pemb<> pe(g);
+  // argv[2] is the path to a file with the hierarchical description.
+        int total;
+        unsigned int n,niveles,aux,mitotal = 0;
+        Graph g = read_graph_from_file(argv[1]);
+pe = new pemb<bit_vector , sd_vector<> >(g,0,1,argv);
 
-  cout << "Size in bytes: " << size_in_bytes(pe) << " B" << endl;
-  cout << "Degree of vertex 10: " << pe.degree(10) << endl;
+
+if(pe->Inside(2,0,7,8))cout << "Region 2 Inside in Region 8"\n;
+
+if(pe->Touches(2,0,7,8))cout << "Region 2 Touches with Region 8"\n;
+
+
+vector <int> regions = pe->Contained(8,2,1);
+cout << "Region 8 contains the following regions at level 1\n";
+four(int i = 0; i < regions.size();i++)cout << regions[i] << " ";
+cout << endl;
+return 0;
 }
 ```
 
-#### Succinct encoding of unbalanced binary strings representing triangulations
-
-This project provides a succinct data structure to represent triangulations. 
-
-A full description of the structure will be available soon.
-
-The structure can be used as follows:
-
+Structure based on approach 2 
 ```cpp
-#include <complementary/Graph.hpp>
+#include "graph3.hpp"
+#include "auxiliar.hpp"
+#include "pemb-ap2wt.hpp"
+// to use one of the other variant based on approach two, change the include
+//#include "pemb-ap2plain.hpp"
+//#include "pemb-ap2rmmt.hpp"
 #include <complementary/utils.hpp>
 
-#include <sdsl/max_planar.hpp>
-#include <sdsl/rrr_vector.hpp>
 
-using namespace sdsl;
+
 using namespace std;
+using namespace sdsl;
 
-int main(int argc, char **argv) {
-  Graph g = read_oriented_graph_from_file(argv[1]);
-  int bs = atoi(argv[2]);
+pemb<> *pe;
 
-  max_planar_rmmt<rrr_vector<>> mpg(g, bs);
+int main(int argc, char **argv){
+  // argv[1] is the path to a file with the planar embedding.
+  // argv[2] is the path to a file with the hierarchical description.
+        int total;
+        unsigned int n,niveles,aux,mitotal = 0;
+        Graph g = read_graph_from_file(argv[1]);
+pe = new pemb<>(g,0,1,argv); //
+if(pe->Inside(2,0,7,8))cout << "Region 2 Inside in Region 8"\n;
 
-  cout << "Number of vertices: " << mpg.vertices() << endl;
-  cout << "Number of edges: " << mpg.edges() << endl;
-  cout << "Size in bytes: " << size_in_bytes(mpg) << " B" << endl;
-  
-  if(mpg.are_neighbors(0, 10))
-    cout << "Vertices 0 and 10 are neighbors" << endl;
-  else
-    cout << "Vertices 0 and 10 are not neighbors" << endl;
+if(pe->Touches(2,0,7,8))cout << "Region 2 Touches with Region 8"\n;
 
-  cout << "The degree of vertex 10 is " << mpg.degree(10) << endl;
+
+vector <int> regions = pe->Contained(8,2,1);
+cout << "Region 8 contains the following regions at level 1\n";
+four(int i = 0; i < regions.size();i++)cout << regions[i] << " ";
+cout << endl;
+return 0;
 }
 ```
+
+Structure based on approach 2 with reduced memory
+```cpp
+#include "graph4.hpp"
+#include "pemb-ap2rmmt.hpp"
+#include <complementary/utils.hpp>
+
+
+
+using namespace std;
+using namespace sdsl;
+
+pemb<> *pe;
+
+int main(int argc, char **argv){
+  // argv[1] is the path to a file with the planar embedding.
+  // argv[2] is the path to a file with the hierarchical description.
+        int total;
+        unsigned int n,niveles,aux,mitotal = 0;
+        Graph g = read_graph_from_file(argv[1]);
+pe = new pemb<>(g,0,argv); //
+if(pe->Inside(2,0,7,8))cout << "Region 2 Inside in Region 8"\n;
+
+if(pe->Touches(2,0,7,8))cout << "Region 2 Touches with Region 8"\n;
+
+
+vector <int> regions = pe->Contained(8,2,1);
+cout << "Region 8 contains the following regions at level 1\n";
+four(int i = 0; i < regions.size();i++)cout << regions[i] << " ";
+cout << endl;
+return 0;
+}
+```
+
+Structure based on approach 3
+```cpp
+#include "graph3.hpp"
+#include "auxiliar.hpp"
+#include "pemb-ap3.hpp"
+#include <complementary/utils.hpp>
+
+
+
+using namespace std;
+using namespace sdsl;
+
+pemb<> *pe;
+
+int main(int argc, char **argv){
+  // argv[1] is the path to a file with the planar embedding.
+  // argv[2] is the path to a file with the hierarchical description.
+        int total;
+        unsigned int n,niveles,aux,mitotal = 0;
+        Graph g = read_graph_from_file(argv[1]);
+pe = new pemb<>(g,0,argv);
+
+
+if(pe->Inside(2,0,7,8))cout << "Region 2 Inside in Region 8"\n;
+
+if(pe->Touches(2,0,7,8))cout << "Region 2 Touches with Region 8"\n;
+
+
+vector <int> regions = pe->Contained(8,2,1);
+cout << "Region 8 contains the following regions at level 1\n";
+four(int i = 0; i < regions.size();i++)cout << regions[i] << " ";
+cout << endl;
+return 0;
+}
+```
+
 
 to compile, just run:
 
