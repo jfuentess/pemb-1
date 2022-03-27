@@ -1064,7 +1064,7 @@ size_type vertex2(size_type e, int nivel){
 	}
 	//Retorna primer parentesis en nivel 0 contenido por la region entregada
 
-        bool Inside2(unsigned int x, unsigned int levelx, unsigned int y, unsigned int levely){
+        bool Inside(unsigned int x, unsigned int levelx, unsigned int y, unsigned int levely){
 
            	int posy,posx,posf,posx2;
 posx = directoprueba[x];
@@ -1148,7 +1148,7 @@ bool contenido = Inside2(vecinos[i]+nlimites[levelx],levelx,y+nlimites[levely],l
                 return tiempoaux;
         }
 
-        vector <int> Contained3(unsigned int x, int levelx, int levely){
+        vector <int> Contained(unsigned int x, int levelx, int levely){
           int posx = /*arbol_st.select(plano3[x])*/ arbol_select1(plano3[x]),diflevel = levelx - levely;
           int posini =  /*arbol_st.select(plano3[x]+diflevel)*/arbol_select1(plano3[x]+diflevel);
           int posfinal = arbol_st.find_close(posx),posaux = posini;
