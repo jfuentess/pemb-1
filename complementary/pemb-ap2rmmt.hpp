@@ -2958,7 +2958,7 @@ pos = posactual;
         }
 
 
-	vector <int> Contained(unsigned int x, int levelx, int levely){
+	vector <int> Contained3(unsigned int x, int levelx, int levely){
 		unsigned int a = goLevel(x,levelx,levely);
 		size_type nxt = first(a,levely);
 		size_type limit = mate(nxt,levely);
@@ -3255,7 +3255,7 @@ return retorno;
 
 
 
-vector <int> Contained3(unsigned int x, int levelx, int levely){
+vector <int> Contained(unsigned int x, int levelx, int levely){
         unsigned int a = goLevel(x,levelx,levely);
 		int lugar = 0;
         size_type nxt ,nxt2 = first2(a,levely)+2,nxt3,nxt4,meter;
