@@ -346,7 +346,8 @@ int main(int argc, char **argv){
         int total;
         unsigned int n,niveles,aux,mitotal = 0;
         Graph g = read_graph_from_file(argv[1]);
-pe = new pemb<>(g,0,1,argv); //
+pe = new pemb<>(g,0,1,argv); 
+pe->iniresumen(256); // Size of block
 if(pe->Inside(2,0,7,8))cout << "Region 2 Inside in Region 8"\n;
 
 if(pe->Touches(2,0,7,8))cout << "Region 2 Touches with Region 8"\n;
@@ -379,7 +380,8 @@ int main(int argc, char **argv){
         int total;
         unsigned int n,niveles,aux,mitotal = 0;
         Graph g = read_graph_from_file(argv[1]);
-pe = new pemb<>(g,0,argv); //
+pe = new pemb<>(g,0,argv); 
+pe->iniresumen(256); // Size of block
 if(pe->Inside(2,0,7,8))cout << "Region 2 Inside in Region 8"\n;
 
 if(pe->Touches(2,0,7,8))cout << "Region 2 Touches with Region 8"\n;
