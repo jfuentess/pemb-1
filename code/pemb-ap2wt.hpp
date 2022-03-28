@@ -14,9 +14,9 @@
 #include <stack>
 #include <utility>
 #include "auxiliar.hpp"
-#include "Vertex.hpp"
-#include "Edge.hpp"
-#include "Tree.hpp"
+#include <complementary/Vertex.hpp>
+#include <complementary/Edge.hpp>
+#include <complementary/Tree.hpp>
 #include <vector>
 #include "graph3.hpp"
 #include <sdsl/sd_vector.hpp>
