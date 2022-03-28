@@ -1,15 +1,15 @@
 #ifndef INCLUDED_SDSL_PEMB
 #define INCLUDED_SDSL_PEMB
 
-#include "sdsl_concepts.hpp"
-#include "int_vector.hpp"
-#include "rank_support_v.hpp"
-#include "select_support_mcl.hpp"
-#include "wt_helper.hpp"
-#include "util.hpp"
-#include "bp_support_sada.hpp"
-#include "bp_support_gg.hpp"
-#include "bp_support_g.hpp"
+#include <sdsl/sdsl_concepts.hpp>
+#include <sdsl/int_vector.hpp>
+#include <sdsl/rank_support_v.hpp>
+#include <sdsl/select_support_mcl.hpp>
+#include <sdsl/wt_helper.hpp>
+#include <sdsl/util.hpp>
+#include <sdsl/bp_support_sada.hpp>
+#include <sdsl/bp_support_gg.hpp>
+#include <sdsl/bp_support_g.hpp>
 #include <algorithm> // for std::swap
 #include <stdexcept>
 #include <vector>
