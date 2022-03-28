@@ -220,7 +220,6 @@ inv_perm_support<> perm;
 	int total;
 	unsigned int n,m,niveles,aux,mitotal = 0,tam = 0,a,b,c;
 
-	Graph g2 = read_graph_from_file(argv[1]);
 
 
 
@@ -353,7 +352,7 @@ fclose(fp2);
     exit(EXIT_FAILURE);
 	}
 
-	n = g2.vertices();
+	n = g.vertices();
     fscanf(fp11,"%d",&niveles);
 	unsigned int *limites = new unsigned int[niveles+1](); 
 	unsigned int *totalnivel = new unsigned int[niveles](); 
