@@ -6,7 +6,7 @@
 #include <sdsl/rank_support_v.hpp>
 #include <sdsl/select_support_mcl.hpp>
 #include <sdsl/wt_helper.hpp>
-#include "util.hpp"
+#include <sdsl/util.hpp>
 #include <sdsl/bp_support_sada.hpp>
 #include <algorithm> 
 #include <stdexcept>
