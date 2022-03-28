@@ -17,9 +17,9 @@
 #include <utility>
 #include "auxiliar.hpp"
 #include "baseline.hpp"
-#include "Vertex.hpp"
-#include "Edge.hpp"
-#include "Tree.hpp"
+#include <complementary/Vertex.hpp>
+#include <complementary/Edge.hpp>
+#include <complementary/Tree.hpp>
 #include <vector>
 #include <sdsl/sd_vector.hpp>
 #include <sdsl/wavelet_trees.hpp>
