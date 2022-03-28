@@ -8,6 +8,8 @@ The implementations provided requires:
 
 * Installing the following version of SDSL: https://github.com/jfuentess/sdsl-lite
 
+------------
+
 This project provides three succinct data structures to Spatial hierarchical structures.
 
 The structures can be used as follows:
