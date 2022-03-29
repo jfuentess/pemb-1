@@ -39,11 +39,11 @@ The implementation files are available in the file `code.zip`, and are divided i
 * baseline.hpp: Implementation of a baseline which uses a compact planar embedding on each granularity level and a non-compact array to store hierarchy information. 
 
 #### Auxiliary files
-* graph3.hpp: 
-* graph4.hpp: 
-* Node.hpp: 
-* auxiliar.hpp: 
-* auxiliar2.hpp: 
+* graph3.hpp: Class implementing a graph, including a function to compute a spanning tree.
+* graph4.hpp: Class implementing a graph, including a function to compute a spanning tree. This class is used in the implementation ap2rmmt.hpp.
+* Node.hpp: Class implementing a node of a graph.
+* auxiliar.hpp: Auxiliary class to provide support for parentheses manipulation
+* auxiliar2.hpp: Auxiliary class to provide support for parentheses manipulation. This class is used in the implementation ap2rmmt.hpp.
 
 ## Usage
 
